@@ -95,7 +95,6 @@ Respond with ONLY valid JSON. Generate EXACTLY 5 tasks (no more, no less):
       ],
       temperature: 0.3,
       max_tokens: 4000,
-      transforms: ['middle-out'],
     });
 
     const content = response.choices[0].message.content || '';

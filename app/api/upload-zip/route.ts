@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       const tempFiles = await prisma.tempAnalysisFiles.create({
         data: {
           userId: session.user.id,
-          filesData: { files, tree },
+          filesData: { files, tree } as any,
           expiresAt,
         },
       });
@@ -105,10 +105,3 @@ export async function POST(req: NextRequest) {
 }
 
 // Увеличиваем лимит для загрузки файлов (50MB)
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-  },
-};

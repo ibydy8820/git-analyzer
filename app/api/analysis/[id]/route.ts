@@ -5,45 +5,42 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
-    const analysisId = params.id;
+    const { id } = await params;
 
-    const analysis = await prisma.analysis.findFirst({
-      where: {
-        id: analysisId,
-        userId,
+    const analysis = await prisma.analysis.findUnique({
+      where: { id },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
 
     if (!analysis) {
-      return NextResponse.json(
-        { success: false, error: 'Analysis not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Analysis not found' }, { status: 404 });
+    }
+
+    if (analysis.userId !== session.user.id) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
     return NextResponse.json({
       success: true,
-      ...analysis.result,
       analysisId: analysis.id,
+      analysis: (analysis.result as any).analysis,
+      metadata: (analysis.result as any).metadata,
+      messages: analysis.messages,
     });
   } catch (error: any) {
-    console.error('❌ Get analysis error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Failed to load analysis:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
