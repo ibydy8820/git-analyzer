@@ -42,7 +42,7 @@ export default async function HomePage() {
           </div>
 
           <Link
-            href="/dashboard"
+            href="/analyze"
             className="block w-full bg-gray-700 hover:bg-gray-600 text-white text-center py-4 px-6 rounded-xl font-medium transition border border-gray-600"
           >
             <span className="flex items-center justify-center gap-2">
