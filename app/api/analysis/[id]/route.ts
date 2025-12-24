@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
 import { prisma } from '@/lib/db/prisma';
+import { getUserId } from '@/lib/auth/getUserId';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getUserId();
 
     const { id } = await params;
 
@@ -28,7 +24,7 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Analysis not found' }, { status: 404 });
     }
 
-    if (analysis.userId !== session.user.id) {
+    if (analysis.userId !== userId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 

@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
 import { prisma } from '@/lib/db/prisma';
+import { getUserId } from '@/lib/auth/getUserId';
 import { fetchRepoStructure, getUserGithubToken } from '@/lib/github/client';
 import { filterFiles } from '@/lib/ai/filter';
 import { analyzeRepository } from '@/lib/ai/analyzer';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getUserId();
 
     const { analysisId } = await req.json();
 
     // Получаем предыдущий анализ
     const prevAnalysis = await prisma.analysis.findFirst({
-      where: { id: analysisId, userId: session.user.id },
+      where: { id: analysisId, userId: userId },
       include: { taskCompletions: true, snapshots: true },
     });
 
@@ -28,7 +24,7 @@ export async function POST(req: NextRequest) {
     console.log(`🔄 Refreshing analysis for: ${prevAnalysis.repoUrl}`);
 
     // Получаем GitHub токен
-    const githubToken = await getUserGithubToken(session.user.id);
+    const githubToken = await getUserGithubToken(userId);
 
     // Скачиваем свежую версию репо
     const repoData = await fetchRepoStructure(prevAnalysis.repoUrl!, githubToken || undefined);
@@ -58,7 +54,7 @@ export async function POST(req: NextRequest) {
     // Создаём новый анализ
     const newAnalysis = await prisma.analysis.create({
       data: {
-        userId: session.user.id,
+        userId: userId,
         repoUrl: prevAnalysis.repoUrl,
         projectDescription: prevAnalysis.projectDescription,
         filesAnalyzed: aiResult.metadata.filesAnalyzed,

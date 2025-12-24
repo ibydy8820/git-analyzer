@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
 import { analyzeRepository } from '@/lib/ai/analyzer';
 import { prisma } from '@/lib/db/prisma';
+import { getUserId } from '@/lib/auth/getUserId';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getUserId();
 
     const { repoUrl, projectDescription, answers, tempFilesId } = await req.json();
 
@@ -28,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Проверяем что файлы принадлежат текущему пользователю
-    if (tempFiles.userId !== session.user.id) {
+    if (tempFiles.userId !== userId) {
       return NextResponse.json({ 
         success: false, 
         error: 'Unauthorized access to temporary files' 
@@ -58,7 +54,7 @@ export async function POST(req: NextRequest) {
     // Сохраняем анализ
     const analysis = await prisma.analysis.create({
       data: {
-        userId: session.user.id,
+        userId: userId,
         repoUrl,
         projectDescription: fullDescription,
         filesAnalyzed: aiResult.metadata.filesAnalyzed,

@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
 import { parseZipFile } from '@/lib/utils/zipParser';
 import { analyzeRepository } from '@/lib/ai/analyzer';
 import { prisma } from '@/lib/db/prisma';
+import { getUserId } from '@/lib/auth/getUserId';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getUserId();
 
     const formData = await req.formData();
     const zipFile = formData.get('zipFile') as File;
@@ -57,7 +53,7 @@ export async function POST(req: NextRequest) {
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const tempFiles = await prisma.tempAnalysisFiles.create({
         data: {
-          userId: session.user.id,
+          userId: userId,
           filesData: { files, tree } as any,
           expiresAt,
         },
@@ -79,7 +75,7 @@ export async function POST(req: NextRequest) {
     // Полный анализ - сохраняем
     const analysis = await prisma.analysis.create({
       data: {
-        userId: session.user.id,
+        userId: userId,
         repoUrl: null, // ZIP файл - нет URL
         projectDescription,
         filesAnalyzed: files.length,

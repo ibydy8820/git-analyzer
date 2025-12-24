@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
 import { prisma } from '@/lib/db/prisma';
+import { getUserId } from '@/lib/auth/getUserId';
 import OpenAI from 'openai';
 
 const client = new OpenAI({
@@ -40,10 +39,7 @@ You: "This task is critical because it directly impacts user acquisition - the m
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getUserId();
 
     const { analysisId, message, chatHistory } = await req.json();
 
@@ -51,7 +47,7 @@ export async function POST(req: NextRequest) {
     const analysis = await prisma.analysis.findFirst({
       where: {
         id: analysisId,
-        userId: session.user.id,
+        userId: userId,
       },
     });
 

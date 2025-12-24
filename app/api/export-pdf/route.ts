@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
 import { prisma } from '@/lib/db/prisma';
+import { getUserId } from '@/lib/auth/getUserId';
 import OpenAI from 'openai';
 
 const client = new OpenAI({
@@ -11,15 +10,12 @@ const client = new OpenAI({
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getUserId();
 
     const { analysisId } = await req.json();
 
     const analysis = await prisma.analysis.findFirst({
-      where: { id: analysisId, userId: session.user.id },
+      where: { id: analysisId, userId: userId },
     });
 
     if (!analysis) {

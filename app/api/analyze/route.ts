@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
 import { z } from 'zod';
 import { fetchRepoStructure, getUserGithubToken } from '@/lib/github/client';
 import { analyzeRepository } from '@/lib/ai/analyzer';
 import { prisma } from '@/lib/db/prisma';
+import { getUserId } from '@/lib/auth/getUserId';
 
 const AnalyzeRequestSchema = z.object({
   repoUrl: z.string().url().optional(),
@@ -18,15 +17,11 @@ const AnalyzeRequestSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getUserId();
 
     const body = await req.json();
     const validatedData = AnalyzeRequestSchema.parse(body);
     const { repoUrl, projectDescription, userContext } = validatedData;
-    const userId = session.user.id;
 
     if (!repoUrl) {
       return NextResponse.json({ success: false, error: 'GitHub URL is required' }, { status: 400 });

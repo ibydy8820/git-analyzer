@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
 import { prisma } from '@/lib/db/prisma';
+import { getUserId } from '@/lib/auth/getUserId';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getUserId();
 
     const { analysisId, taskIndex, taskTitle, completed } = await req.json();
 
     // Проверяем что анализ принадлежит пользователю
     const analysis = await prisma.analysis.findFirst({
-      where: { id: analysisId, userId: session.user.id },
+      where: { id: analysisId, userId: userId },
     });
 
     if (!analysis) {
@@ -52,10 +48,7 @@ export async function POST(req: NextRequest) {
 // GET - получить статус всех задач
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = await getUserId();
 
     const { searchParams } = new URL(req.url);
     const analysisId = searchParams.get('analysisId');

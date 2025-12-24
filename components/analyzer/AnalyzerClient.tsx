@@ -7,6 +7,7 @@ import TasksList from './TasksList';
 import ProjectTimeline from './ProjectTimeline';
 import ClarificationModal from './ClarificationModal';
 import ZipUploader from './ZipUploader';
+import Header from '../layout/Header';
 
 type Language = 'ru' | 'en';
 
@@ -328,6 +329,17 @@ export default function AnalyzerClient() {
 
   return (
     <div className="min-h-screen bg-gray-900">
+      <header className="bg-gray-800 border-b border-gray-700 sticky top-0 z-10 backdrop-blur-sm bg-gray-800/95">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex justify-between items-center mb-2">
+            <h1 className="text-2xl font-bold text-white">
+              Git <span className="text-green-400">Analyzer</span>
+            </h1>
+          </div>
+          <Header />
+        </div>
+      </header>
+
       <div className="flex justify-end p-4">
         <div className="inline-flex rounded-lg bg-gray-800 p-1">
           <button onClick={() => setLang('ru')} className={`px-4 py-2 rounded-md text-sm font-medium transition ${lang === 'ru' ? 'bg-green-500 text-white' : 'text-gray-400 hover:text-white'}`}>RU</button>
